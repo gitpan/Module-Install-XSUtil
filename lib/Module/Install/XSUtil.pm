@@ -2,11 +2,12 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.01';
+$VERSION = '0.02';
+
+use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
 
 use strict;
-use Module::Install::Base;
 
 use Config;
 
@@ -309,7 +310,7 @@ sub install_headers{
 
 		$ToInstall{$path} = File::Spec->join('$(INST_LIBDIR)', $name, $path);
 
-		$self->provides($ident => { file => $path });
+		#$self->provides($ident => { file => $path });
 
 		_verbose "install: $ident ($path)" if _VERBOSE;
 		$self->_extract_functions_from_header_file($path);

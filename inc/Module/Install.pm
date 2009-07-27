@@ -194,11 +194,10 @@ sub preload {
 
 	my %seen;
 	foreach my $obj ( @exts ) {
-		my $stash = \%{ref($obj) . '::'};
-		while (my $method = each %{$stash}) {
+		while (my ($method, $glob) = each %{ref($obj) . '::'}) {
+			next unless $obj->can($method);
 			next if $method =~ /^_/;
 			next if $method eq uc($method);
-			next unless $obj->can($method);
 			$seen{$method}++;
 		}
 	}
@@ -314,7 +313,7 @@ sub find_extensions {
 		if ( $subpath eq lc($subpath) || $subpath eq uc($subpath) ) {
 			my $content = Module::Install::_read($subpath . '.pm');
 			my $in_pod  = 0;
-			foreach ( split /\n/, $content ) {
+			foreach ( split //, $content ) {
 				$in_pod = 1 if /^=\w/;
 				$in_pod = 0 if /^=cut/;
 				next if ($in_pod || /^=cut/);  # skip pod text
