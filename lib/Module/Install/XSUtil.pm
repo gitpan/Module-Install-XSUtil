@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -17,6 +17,7 @@ use File::Find;
 use constant _VERBOSE => $ENV{MI_VERBOSE} ? 1 : 0;
 
 my %BuildRequires = (
+	'Devel::PPPort'     => 3.19,
 	'ExtUtils::ParseXS' => 2.20,
 	'XSLoader'          => 0.08,
 );
@@ -57,7 +58,7 @@ sub use_ppport{
 		use Devel::PPPort;
 		Devel::PPPort::WriteFile(q{$filename});
 		1;
-	} or warn("Cannot write $filename: $@");
+	} or warn("Cannot create $filename: $@");
 
 	$self->clean_files($filename);
 	$self->cc_append_to_ccflags('-DUSE_PPPORT');
@@ -76,7 +77,7 @@ sub cc_warnings{
 	}
 	elsif($Config{cc} =~ /\A cl \b /xmsi){
 		# Microsoft Visual C++ Compiler
-		$self->cc_append_to_ccflags('-Wall');
+		$self->cc_append_to_ccflags('-W3');
 	}
 	else{
 		# TODO: support other compilers
@@ -148,7 +149,7 @@ sub cc_append_to_ccflags{
 		$mm->{CCFLAGS} .=  q{ } . $flags;
 	}
 	else{
-		$mm->{CCFLAGS}  = $flags;
+		$mm->{CCFLAGS}  = ($^O eq 'MSWin32' ? $Config{ccflags} . ' ' : '') . $flags;
 	}
 	return;
 }
@@ -393,6 +394,7 @@ sub cc_append_to_funclist{
 	my $mm = $self->makemaker_args;
 
 	push @{$mm->{FUNCLIST} ||= []}, @functions;
+	$mm->{DL_FUNCS} ||= { '$(NAME)' => ['boot_$(NAME)'] };
 
 	return;
 }
@@ -444,7 +446,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.01.
+This document describes Module::Install::XSUtil version 0.03.
 
 =head1 SYNOPSIS
 
