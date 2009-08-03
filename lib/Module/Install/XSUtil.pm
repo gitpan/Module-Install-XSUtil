@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -163,47 +163,26 @@ sub requires_xs{
 
 	while(my $module = each %added){
 		my $mod_basedir = File::Spec->join(split /::/, $module);
+		my $rx_header = qr{\A (.+ $mod_basedir) .+ \.h \z}xmsi;
+		my $rx_lib    = qr{\A (.+ $mod_basedir) .+ (\w+) \. (?: lib | dll | a) \z}xmsi;
 
 		SCAN_INC: foreach my $inc_dir(@INC){
-			my $packlist = File::Spec->join($inc_dir, 'auto', $mod_basedir, '.packlist');
-			
-			my $rx_header = qr{\A (.+ $mod_basedir) .+ \.h \z}xmsi;
-			my $rx_lib    = qr{\A (.+ $mod_basedir) .+ (\w+) \. (?: lib | dll | a) \z}xmsi;
+			my @dirs = grep{ -e } File::Spec->join($inc_dir, 'auto', $mod_basedir), File::Spec->join($inc_dir, $mod_basedir);
 
-			if(-e $packlist){
-				local *IN;
-				open IN, "< $packlist" or die("Cannot open '$packlist' for reading: $!\n");
-				while(<IN>){
-					chomp;
+			next SCAN_INC unless @dirs;
 
-					if($_ =~ $rx_header){
-						push @inc, $1
-					}
-					elsif($_ =~ $rx_lib){
-						push @libs, [$2, $1];
-					}
+			my $n_inc = scalar @inc;
+			find(sub{
+				if($File::Find::name =~ $rx_header){
+					push @inc, $1;
 				}
+				elsif($File::Find::name =~ $rx_lib){
+					push @libs, [$2, $1];
+				}
+			}, @dirs);
 
-				close IN;
-
+			if($n_inc != scalar @inc){
 				last SCAN_INC;
-			}
-			elsif($inc_dir =~ /\b blib \b/xmsi){
-				print "scanning $inc_dir\n";
-				my $n_inc = scalar @inc;
-
-				find(sub{
-					if($File::Find::name =~ $rx_header){
-						push @inc, $1;
-					}
-					elsif($File::Find::name =~ $rx_lib){
-						push @libs, [$2, 1];
-					}
-				}, File::Spec->join($inc_dir, 'auto', $mod_basedir), File::Spec->join($inc_dir, $mod_basedir));
-
-				if($n_inc != scalar @inc){
-					last SCAN_INC;
-				}
 			}
 		}
 	}
@@ -440,7 +419,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.03.
+This document describes Module::Install::XSUtil version 0.05.
 
 =head1 SYNOPSIS
 
@@ -543,6 +522,10 @@ Goro Fuji (gfx) E<lt>gfuji(at)cpan.orgE<gt>.
 L<ExtUtils::Depends>.
 
 L<Module::Install>.
+
+L<Module::Install::CheckLib>.
+
+L<Devel::CheckLib>.
 
 =head1 LICENSE AND COPYRIGHT
 
