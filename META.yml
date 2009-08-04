@@ -1,7 +1,7 @@
 ---
-abstract: 'Utility functions for XS modules'
+abstract: "Utility functions for XS modules\r"
 author:
-  - 'Goro Fuji (gfx) <gfuji(at)cpan.org>.'
+  - "Goro Fuji (gfx) <gfuji(at)cpan.org>.\r"
 build_requires:
   Devel::PPPort: 3.19
   ExtUtils::MakeMaker: 6.42
@@ -30,4 +30,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/gfx/Perl-Module-Install-XSUtil.git
-version: 0.06
+version: 0.07
