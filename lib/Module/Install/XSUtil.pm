@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -42,6 +42,15 @@ sub _xs_initialize{
 	return;
 }
 
+sub _is_gcc{
+	return defined $Config{gccversion};
+}
+
+# Microsoft Visual C++ Compiler
+sub _is_msvc{
+	return $Config{cc} =~ /\A cl \b /xmsi;
+}
+
 sub use_ppport{
 	my($self, $dppp_version) = @_;
 
@@ -74,11 +83,10 @@ sub cc_warnings{
 
 	$self->_xs_initialize();
 
-	if($Config{gccversion}){
+	if(_is_gcc()){
 		$self->cc_append_to_ccflags(qw(-Wall -Wextra));
 	}
-	elsif($Config{cc} =~ /\A cl \b /xmsi){
-		# Microsoft Visual C++ Compiler
+	elsif(_is_msvc()){
 		$self->cc_append_to_ccflags('-W3');
 	}
 	else{
@@ -145,9 +153,24 @@ sub cc_append_to_ccflags{
 	$self->_xs_initialize();
 
 	my $mm    = $self->makemaker_args;
-	
+
 	$mm->{CCFLAGS} ||= $Config{ccflags};
 	$mm->{CCFLAGS}  .= q{ } . join q{ }, @ccflags;
+	return;
+}
+
+sub cc_define{
+	my($self, @defines) = @_;
+
+	$self->_xs_initialize();
+
+	my $mm = $self->makemaker_args;
+	if(exists $mm->{DEFINE}){
+		$mm->{DEFINE} .= q{ } . join q{ }, @defines;
+	}
+	else{
+		$mm->{DEFINE}  = join q{ }, @defines;
+	}
 	return;
 }
 
@@ -397,8 +420,7 @@ sub const_cccmd {
 	my $cccmd  = $self->SUPER::const_cccmd(@_);
 	return q{} unless $cccmd;
 
-	if ($Config{cc} =~ /\A cl \b /xmsi){
-		# Microsoft Visual C++ Compiler
+	if (Module::Install::XSUtil::_is_msvc()){
 		$cccmd .= ' -Fo$@';
 	}
 	else {
@@ -419,12 +441,17 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.05.
+This document describes Module::Install::XSUtil version 0.06.
 
 =head1 SYNOPSIS
 
 	# in Makefile.PL
 	use inc::Module::Install;
+
+	# This is a special version of requires().
+	# If XS::SomeFeature provides header files,
+	# this will add its include paths into INC
+	requies_xs 'XS::SomeFeature';
 
 	# No need to include ppport.h. It's created here.
 	use_ppport 3.19;
@@ -432,10 +459,8 @@ This document describes Module::Install::XSUtil version 0.05.
 	# Enables C compiler warnings, e.g. -Wall -Wextra
 	cc_warnings;
 
-	# This is a special version of requires().
-	# If XS::SomeFeature provides header files,
-	# this will add its include paths into INC
-	requies_xs 'XS::SomeFeature';
+	# Sets some C pre-processor macros.
+	cc_define q{-DUSE_SOME_FEATURE=42};
 
 	# Sets paths for header files
 	cc_include_paths 'include'; # all the header files are in include/
@@ -444,7 +469,7 @@ This document describes Module::Install::XSUtil version 0.05.
 	cc_src_paths 'src'; # all the XS and C source files are in src/
 
 	# Installs header files
-	install_headers; # all the header files are in @cc_include_paths
+	install_headers; # all the header files in @cc_include_paths
 
 
 =head1 DESCRIPTION
@@ -471,6 +496,10 @@ and adds C<-DUSE_PPPORT> to B<ccflags>.
 =head2 cc_warnings
 
 Enables C compiler warnings.
+
+=head2 cc_define @macros
+
+Sets C<cpp> macros as compiler options.
 
 =head2 cc_src_paths @source_paths
 
