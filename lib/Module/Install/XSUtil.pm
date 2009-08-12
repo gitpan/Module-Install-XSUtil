@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -187,8 +187,8 @@ sub requires_xs{
 
 	while(my $module = each %added){
 		my $mod_basedir = File::Spec->join(split /::/, $module);
-		my $rx_header = qr{\A ( .+ \Q$mod_basedir\E ) .+ \.h(?:pp)? \z}xmsi;
-		my $rx_lib    = qr{\A ( .+ \Q$mod_basedir\E ) .+ (\w+) \. (?: lib | dll | a) \z}xmsi;
+		my $rx_header = qr{\A ( .+ \Q$mod_basedir\E ) .+ \. h(?:pp)?           \z}xmsi;
+		my $rx_lib    = qr{                              \. (?: lib | dll | a) \z}xmsi;
 
 		SCAN_INC: foreach my $inc_dir(@INC){
 			my @dirs = grep{ -e } File::Spec->join($inc_dir, 'auto', $mod_basedir), File::Spec->join($inc_dir, $mod_basedir);
@@ -197,11 +197,12 @@ sub requires_xs{
 
 			my $n_inc = scalar @inc;
 			find(sub{
-				if($File::Find::name =~ $rx_header){
-					push @inc, $1;
+				if(my($incdir) = $File::Find::name =~ $rx_header){
+					push @inc, $incdir;
 				}
 				elsif($File::Find::name =~ $rx_lib){
-					push @libs, [$2, $1];
+					my($libname) = $_ =~ /\A (?:lib)? (\w+) /xmsi;
+					push @libs, [$libname, $File::Find::dir];
 				}
 			}, @dirs);
 
@@ -442,7 +443,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.07.
+This document describes Module::Install::XSUtil version 0.08.
 
 =head1 SYNOPSIS
 
