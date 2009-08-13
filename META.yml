@@ -26,9 +26,9 @@ no_index:
     - t
     - xt
 requires:
-  Module::Install: 0.77
+  Module::Install: 0.91
   perl: 5.00503
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/gfx/Perl-Module-Install-XSUtil.git
-version: 0.08
+version: 0.09
