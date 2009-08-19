@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -43,16 +43,14 @@ sub _xs_initialize{
 		$self->makemaker_args(OBJECT => '$(O_FILES)');
 
 		if($self->_xs_debugging()){
-            # override $Config{optimize}
+			# override $Config{optimize}
 			if(_is_msvc()){
 				$self->makemaker_args(OPTIMIZE => '-Zi');
 			}
 			else{
 				$self->makemaker_args(OPTIMIZE => '-g');
 			}
-
-			$self->cc_define('-DDEBUGGING');
-        }
+		}
 	}
 	return;
 }
@@ -327,6 +325,7 @@ sub install_headers{
 
 	while(my($ident, $path) = each %{$h_files}){
 		$path ||= $h_map->{$ident} || File::Spec->join('.', $ident);
+		$path   = File::Spec->canonpath($path);
 
 		unless($path && -e $path){
 			push @not_found, $ident;
@@ -383,11 +382,16 @@ sub _extract_functions_from_header_file{
 	}
 
 	# remove other include file contents
+	my %cache;
+
 	$contents =~ s{
-		^\s* \# \s+ \d+ \s+ (?! "\Q$h_file\E" ) .* $
-		.*
-		^(?= \s* \#)
-	}{}xmsig;
+		^\s* \# \s+ \d+ \s+ " ([^"]+) " # line "file" extra...
+		([^\#]*)
+	}{
+		my($file, $content) = ($1, $2);
+		$file = $cache{$file} ||= File::Spec->canonpath($file);
+		$file eq $h_file ? $content : '';
+	}xmsige;
 
 	# remove __attribute__(...)
 	$contents =~ s{
@@ -490,7 +494,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.10.
+This document describes Module::Install::XSUtil version 0.11.
 
 =head1 SYNOPSIS
 
