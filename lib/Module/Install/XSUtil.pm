@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -248,6 +248,8 @@ sub cc_src_paths{
 
 	$self->_xs_initialize();
 
+	@dirs = qw(.) unless @dirs;
+
 	my $mm     = $self->makemaker_args;
 
 	my $XS_ref = $mm->{XS} ||= {};
@@ -356,8 +358,6 @@ sub _extract_functions_from_header_file{
 
 	# get header file contents through cpp(1)
 	my $contents = do {
-		local $/;
-
 		my $mm = $self->makemaker_args;
 
 		my $cppflags = q{"-I}. File::Spec->join($Config{archlib}, 'CORE') . q{"};
@@ -382,25 +382,12 @@ sub _extract_functions_from_header_file{
 	}
 
 	# remove other include file contents
-	my %cache;
-
+	my $chfile = q/\# (?:line)? \s+ \d+/;
 	$contents =~ s{
-		^\s* \# \s+ \d+ \s+ " ([^"]+) " # line "file" extra...
-		([^\#]*)
-	}{
-		my($file, $content) = ($1, $2);
-		$file = $cache{$file} ||= File::Spec->canonpath($file);
-		$file eq $h_file ? $content : '';
-	}xmsige;
-
-	# remove __attribute__(...)
-	$contents =~ s{
-		__attribute__
-		\s*
-		\(
-			(?: \( [^\)]+ \) | [^\)]+ ) # ((...)) or (...)
-		\)
-	}{}xmsg;
+		^$chfile  \s+ (?! "\Q$h_file\E" ) .* $
+		.*
+		^(?= $chfile)
+	}{}xmsig;
 
 	while($contents =~ m{
 			([^\\;\s]+                # type
@@ -414,9 +401,8 @@ sub _extract_functions_from_header_file{
 			my $decl = $1;
 			my $name = $2;
 
-			next if $decl =~ /\b typedef \b/xmsi;
-
-			next if $decl =~ /\b [0-9]+ \b/xmsi; # integer literals
+			next if $decl =~ /\b typedef \b/xms;
+			next if $name =~ /^_/xms; # skip something private
 
 			push @functions, $name;
 
@@ -494,7 +480,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.11.
+This document describes Module::Install::XSUtil version 0.12.
 
 =head1 SYNOPSIS
 
@@ -588,6 +574,13 @@ Low level API.
 =head1 DEPENDENCIES
 
 Perl 5.5.3 or later.
+
+=head1 NOTE
+
+In F<Makefile.PL>, you can use C<author_requires>, which is provided by C<Module::Install::AuthorReauires>,
+in order to tell co-developers that they need to install this plugin.
+
+	author_requires 'Module::Install::XSUtil';
 
 =head1 BUGS
 
