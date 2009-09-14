@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -17,7 +17,6 @@ use File::Find;
 use constant _VERBOSE => $ENV{MI_VERBOSE} ? 1 : 0;
 
 my %BuildRequires = (
-	'Devel::PPPort'     => 3.19,
 	'ExtUtils::ParseXS' => 2.20,
 	'XSLoader'          => 0.08,
 );
@@ -29,7 +28,7 @@ sub _verbose{
 }
 
 sub _xs_debugging{
-    return $ENV{XS_DEBUG} || scalar( grep{ $_ eq '-g' } @ARGV );
+    return $ENV{XS_DEBUG} || $Module::Install::AUTHOR || scalar( grep{ $_ eq '-g' } @ARGV );
 }
 
 sub _xs_initialize{
@@ -50,6 +49,7 @@ sub _xs_initialize{
 			else{
 				$self->makemaker_args(OPTIMIZE => '-g');
 			}
+			$self->cc_define('-DXS_ASSERT');
 		}
 	}
 	return;
@@ -98,7 +98,8 @@ sub cc_warnings{
 	$self->_xs_initialize();
 
 	if(_is_gcc()){
-		$self->cc_append_to_ccflags(qw(-Wall -Wextra));
+	    # Note: MSVC++ doesn't support C99, so -Wdeclaration-after-statement helps ensure C89 specs.
+		$self->cc_append_to_ccflags(qw(-Wall -Wextra -Wdeclaration-after-statement));
 	}
 	elsif(_is_msvc()){
 		$self->cc_append_to_ccflags('-W3');
@@ -485,7 +486,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.13.
+This document describes Module::Install::XSUtil version 0.14.
 
 =head1 SYNOPSIS
 
