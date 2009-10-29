@@ -6,9 +6,9 @@ build_requires:
   B::Hooks::OP::Annotation: 0.43
   Devel::PPPort: 3.19
   ExtUtils::MakeMaker: 6.42
-  ExtUtils::ParseXS: 2.2
+  ExtUtils::ParseXS: 2.21
   Test::More: 0.88
-  XSLoader: 0.08
+  XSLoader: 0.1
 configure_requires:
   ExtUtils::MakeMaker: 6.42
 distribution_type: module
@@ -31,4 +31,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/gfx/Perl-Module-Install-XSUtil.git
-version: 0.14
+version: 0.15
