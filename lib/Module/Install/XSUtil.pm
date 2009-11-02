@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -110,7 +110,7 @@ sub cc_warnings{
             $self->cc_append_to_ccflags('-Wextra');
         }
         else{
-            $self->cc_append_to_cclfags('-W');
+            $self->cc_append_to_ccflags('-W');
         }
     }
     elsif(_is_msvc()){
@@ -498,7 +498,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.15.
+This document describes Module::Install::XSUtil version 0.16.
 
 =head1 SYNOPSIS
 
