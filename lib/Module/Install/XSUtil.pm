@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -17,7 +17,7 @@ use File::Find;
 use constant _VERBOSE => $ENV{MI_VERBOSE} ? 1 : 0;
 
 my %ConfigureRequires = (
-    'ExtUtils::CBuilder' => 0.25, # for have_compiler()
+    'ExtUtils::CBuilder' => 0.21, # for have_compiler()
 );
 
 my %BuildRequires = (
@@ -54,6 +54,7 @@ sub _xs_initialize{
         $self->requires(%Requires);
 
         $self->makemaker_args(OBJECT => '$(O_FILES)');
+        $self->clean_files('$(O_FILES)');
 
         if($self->_xs_debugging()){
             # override $Config{optimize}
@@ -84,6 +85,16 @@ sub _is_msvc{
 
     sub cc_available {
         return $cc_available if defined $cc_available;
+
+        foreach my $arg(@ARGV){
+            if($arg eq '--pp'){
+                return $cc_available = 0;
+            }
+            elsif($arg eq '--xs'){
+                return $cc_available = 1;
+            }
+        }
+
         local $@;
         return $cc_available = eval{
             require ExtUtils::CBuilder;
@@ -526,24 +537,20 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.18.
+This document describes Module::Install::XSUtil version 0.19.
 
 =head1 SYNOPSIS
 
     # in Makefile.PL
     use inc::Module::Install;
 
-    # This is a special version of requires().
-    # If XS::SomeFeature provides header files,
-    # this will add its include paths into INC
-    requies_xs 'XS::SomeFeature';
+    # Enables C compiler warnings
+    cc_warnings;
 
     # Uses ppport.h
     # No need to include it. It's created here.
     use_ppport 3.19;
 
-    # Enables C compiler warnings, e.g. -Wall -Wextra
-    cc_warnings;
 
     # Sets C pre-processor macros.
     cc_define q{-DUSE_SOME_FEATURE=42};
@@ -557,6 +564,11 @@ This document describes Module::Install::XSUtil version 0.18.
     # Installs header files
     install_headers; # all the header files in @cc_include_paths
 
+    # This is a special version of requires().
+    # If XS::SomeFeature provides header files,
+    # this will add its include paths into INC
+    requies_xs 'XS::SomeFeature';
+
 
 =head1 DESCRIPTION
 
@@ -569,7 +581,9 @@ See L<XS::MRO::Compat> and L<Method::Cumulative> for example.
 
 =head2 cc_available
 
-Returns true if a C compiler is available.
+Returns true if a C compiler is available. If one passes C<--xs> to
+F<Makefile.PL>, this command returns true, and If one passes C<--pp>,
+it returns false.
 
 This uses C<ExtUtils::CBuilder>.
 
