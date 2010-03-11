@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.21';
+$VERSION = '0.22';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -53,16 +53,16 @@ sub _xs_initialize{
         $self->build_requires(%BuildRequires);
         $self->requires(%Requires);
 
-        $self->makemaker_args(OBJECT => '$(O_FILES)');
+        $self->makemaker_args->{OBJECT} = '$(O_FILES)';
         $self->clean_files('$(O_FILES)');
 
         if($self->_xs_debugging()){
             # override $Config{optimize}
             if(_is_msvc()){
-                $self->makemaker_args(OPTIMIZE => '-Zi');
+                $self->makemaker_args->{OPTIMIZE} = '-Zi';
             }
             else{
-                $self->makemaker_args(OPTIMIZE => '-g');
+                $self->makemaker_args->{OPTIMIZE} = '-g';
             }
             $self->cc_define('-DXS_ASSERT');
         }
@@ -106,8 +106,9 @@ sub use_ppport{
 
     my $filename = 'ppport.h';
 
-    $dppp_version ||= 0;
+    $dppp_version ||= 3.19; # the more, the better
     $self->configure_requires('Devel::PPPort' => $dppp_version);
+    $self->build_requires('Devel::PPPort' => $dppp_version);
 
     print "Writing $filename\n";
 
@@ -536,7 +537,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.21.
+This document describes Module::Install::XSUtil version 0.22.
 
 =head1 SYNOPSIS
 
@@ -680,7 +681,7 @@ L<ExtUtils::MakeMaker>.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2009, Goro Fuji (gfx). Some rights reserved.
+Copyright (c) 2009-2010, Goro Fuji (gfx). Some rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
