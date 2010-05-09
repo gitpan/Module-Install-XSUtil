@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -55,6 +55,7 @@ sub _xs_initialize{
 
         $self->makemaker_args->{OBJECT} = '$(O_FILES)';
         $self->clean_files('$(O_FILES)');
+        $self->clean_files('*.stackdump') if $^O eq 'cygwin';
 
         if($self->_xs_debugging()){
             # override $Config{optimize}
@@ -162,7 +163,6 @@ sub cc_warnings{
     return;
 }
 
-
 sub cc_append_to_inc{
     my($self, @dirs) = @_;
 
@@ -189,6 +189,11 @@ sub cc_append_to_inc{
     return;
 }
 
+
+sub cc_libs {
+    goto &cc_append_to_libs;
+}
+
 sub cc_append_to_libs{
     my($self, @libs) = @_;
 
@@ -198,10 +203,16 @@ sub cc_append_to_libs{
 
     my $libs = join q{ }, map{
         my($name, $dir) = ref($_) eq 'ARRAY' ? @{$_} : ($_, undef);
-
-        $dir = qq{-L$dir } if defined $dir;
-        _verbose "libs: $dir-l$name" if _VERBOSE;
-        $dir . qq{-l$name};
+        my $lib;
+        if(defined $dir) {
+            $lib = ($dir =~ /^-/ ? qq{$dir } : qq{-L$dir });
+        }
+        else {
+            $lib = '';
+        }
+        $lib .= ($name =~ /^-/ ? qq{$name } : qq{-l$name});
+        _verbose "libs: $lib" if _VERBOSE;
+        $lib;
     } @libs;
 
     if($mm->{LIBS}){
@@ -210,8 +221,7 @@ sub cc_append_to_libs{
     else{
         $mm->{LIBS} = $libs;
     }
-
-    return;
+    return $libs;
 }
 
 sub cc_append_to_ccflags{
@@ -330,6 +340,11 @@ sub cc_src_paths{
         push @{$C_ref}, $c unless grep{ $_ eq $c } @{$C_ref};
     }
 
+    $self->clean_files(map{
+        File::Spec->catfile($_, '*.gcov'),
+        File::Spec->catfile($_, '*.gcda'),
+        File::Spec->catfile($_, '*.gcno'),
+    } @dirs);
     $self->cc_append_to_inc('.');
 
     return;
@@ -389,7 +404,10 @@ sub install_headers{
         $ToInstall{$path} = File::Spec->join('$(INST_ARCHAUTODIR)', $ident);
 
         _verbose "install: $path as $ident" if _VERBOSE;
-        $self->_extract_functions_from_header_file($path);
+        my @funcs = $self->_extract_functions_from_header_file($path);
+        if(@funcs){
+            $self->cc_append_to_funclist(@funcs);
+        }
     }
 
     if(@not_found){
@@ -472,11 +490,7 @@ sub _extract_functions_from_header_file{
             }
     }
 
-    if(@functions){
-        $self->cc_append_to_funclist(@functions);
-    }
-
-    return;
+    return @functions;
 }
 
 
@@ -537,7 +551,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.22.
+This document describes Module::Install::XSUtil version 0.23.
 
 =head1 SYNOPSIS
 
@@ -614,6 +628,17 @@ Sets source file directories which include F<*.xs> or F<*.c>.
 =head2 cc_include_paths @include_paths
 
 Sets include paths for a C compiler.
+
+=head2 cc_libs @libs
+
+Sets C<MakeMaker>'s C<LIBS>. If a name starts C<->, it will be interpreted as is.
+Otherwise prefixed C<-l>.
+
+e.g.:
+
+    cc_libs -lfoo;
+    cc_libs  'foo'; # ditto.
+    cc_libs qw(-L/path/to/libs foo bar); # with library paths
 
 =head2 install_headers ?@header_files
 
