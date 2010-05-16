@@ -3,7 +3,7 @@ example/include/foo.h
 example/include/foo/bar.h
 example/include/foo/baz.h
 example/lib/Foo.pm
-example/Makefile.PL
+example/MyMakefile.PL
 example/README
 example/src/bar.c
 example/src/Foo.xs
