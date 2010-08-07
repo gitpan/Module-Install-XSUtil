@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -141,6 +141,12 @@ sub use_ppport{
     return;
 }
 
+sub _gccversion {
+    my $res = `$Config{cc} --version`;
+    my ($version) = $res =~ /\(GCC\) ([0-9.]+)/;
+    return $version || 0;
+}
+
 sub cc_warnings{
     my($self) = @_;
 
@@ -151,9 +157,10 @@ sub cc_warnings{
         $self->cc_append_to_ccflags(qw(-Wall));
 
         no warnings 'numeric';
-        if($Config{gccversion} >= 4.0){
+        my $gccversion = _gccversion();
+        if($gccversion >= 4.0){
             $self->cc_append_to_ccflags('-Wextra -Wdeclaration-after-statement');
-            if($Config{gccversion} >= 4.1){
+            if($gccversion >= 4.1){
                 $self->cc_append_to_ccflags('-Wc++-compat');
             }
         }
@@ -627,7 +634,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.25.
+This document describes Module::Install::XSUtil version 0.26.
 
 =head1 SYNOPSIS
 
