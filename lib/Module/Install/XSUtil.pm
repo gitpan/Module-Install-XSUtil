@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.26';
+$VERSION = '0.27';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -180,7 +180,8 @@ sub cc_warnings{
 
 sub c99_available {
     my($self) = @_;
-    $self->_xs_initialize();
+
+    return 0 if not $self->cc_available();
 
     require File::Temp;
     require File::Basename;
@@ -213,6 +214,8 @@ sub requires_c99 {
         warn "This distribution requires a C99 compiler, but $Config{cc} seems not to support C99, stopped.\n";
         exit;
     }
+    $self->_xs_initialize();
+
     return;
 }
 
@@ -634,7 +637,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.26.
+This document describes Module::Install::XSUtil version 0.27.
 
 =head1 SYNOPSIS
 
@@ -683,6 +686,10 @@ THIS FUNCTION YOURSELF: it will be called for you when this module is
 initialized, and your Makefile.PL process will exit with 0 status.
 Only explicitly call if you need to do some esoteric handling when
 no compiler is available (for example, when you have a pure perl alternative)
+
+=head2 c99_available
+
+Returns true if a C compiler is available and it supports C99 features.
 
 =head2 want_xs ?$default
 
