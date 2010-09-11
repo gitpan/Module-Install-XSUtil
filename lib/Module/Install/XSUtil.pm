@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.27';
+$VERSION = '0.30';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -110,6 +110,7 @@ sub _is_msvc{
 
 sub use_ppport{
     my($self, $dppp_version) = @_;
+    return if $self->{_ppport_ok}++;
 
     $self->_xs_initialize();
 
@@ -141,10 +142,25 @@ sub use_ppport{
     return;
 }
 
+sub use_xshelper {
+    my($self) = @_;
+    $self->_xs_initialize();
+    $self->use_ppport();
+
+    my $file = 'xshelper.h';
+    open my $fh, '>', $file or die "Cannot open $file for writing: $!";
+    print $fh $self->_xshelper_h();
+    close $fh or die "Cannot close $file: $!";
+
+    $self->clean_files($file);
+    return;
+}
+
 sub _gccversion {
     my $res = `$Config{cc} --version`;
     my ($version) = $res =~ /\(GCC\) ([0-9.]+)/;
-    return $version || 0;
+    no warnings 'numeric', 'uninitialized';
+    return sprintf '%g', $version;
 }
 
 sub cc_warnings{
@@ -153,23 +169,23 @@ sub cc_warnings{
     $self->_xs_initialize();
 
     if(_is_gcc()){
-        # Note: MSVC++ doesn't support C99, so -Wdeclaration-after-statement helps ensure C89 specs.
         $self->cc_append_to_ccflags(qw(-Wall));
 
-        no warnings 'numeric';
         my $gccversion = _gccversion();
         if($gccversion >= 4.0){
-            $self->cc_append_to_ccflags('-Wextra -Wdeclaration-after-statement');
-            if($gccversion >= 4.1){
-                $self->cc_append_to_ccflags('-Wc++-compat');
+            # Note: MSVC++ doesn't support C99, so -Wdeclaration-after-statement helps
+            # ensure C89 specs.
+            $self->cc_append_to_ccflags(qw(-Wextra -Wdeclaration-after-statement));
+            if($gccversion >= 4.1) {
+                $self->cc_append_to_ccflags(qw(-Wc++-compat));
             }
         }
         else{
-            $self->cc_append_to_ccflags('-W -Wno-comment');
+            $self->cc_append_to_ccflags(qw(-W -Wno-comment));
         }
     }
     elsif(_is_msvc()){
-        $self->cc_append_to_ccflags('-W3');
+        $self->cc_append_to_ccflags(qw(-W3));
     }
     else{
         # TODO: support other compilers
@@ -593,6 +609,111 @@ sub cc_append_to_funclist{
     return;
 }
 
+sub _xshelper_h {
+    my $h = <<'XSHELPER_H';
+:/*
+:=head1 NAME
+:
+:perlxs.h - Helper C header file for XS modules
+:
+:=head1 DESCRIPTION
+:
+:    // This includes all the perl header files and ppport.h
+:    #include "perlxs.h"
+:
+:=head1 SEE ALSO
+:
+:L<Module::Install::XSUtil>, where this file is distributed as a part of
+:
+:=head1 AUTHOR
+:
+:Fuji, Goro (gfx)
+:
+:=head1 LISENCE
+:
+:Copyright (c) 2010, Fuji, Goro (gfx). All rights reserved.
+:
+:This library is free software; you can redistribute it and/or modify
+:it under the same terms as Perl itself.
+:
+:=cut
+:*/
+:
+:#ifdef __cplusplus
+:extern "C" {
+:#endif
+:
+:#define PERL_NO_GET_CONTEXT /* we want efficiency */
+:#include <EXTERN.h>
+:
+:#include <perl.h>
+:#define NO_XSLOCKS /* for exceptions */
+:#include <XSUB.h>
+:
+:#ifdef __cplusplus
+:} /* extern "C" */
+:#endif
+:
+:#include "ppport.h"
+:
+:/* portability stuff not supported by ppport.h yet */
+:
+:#ifndef STATIC_INLINE /* from 5.13.4 */
+:#   if defined(__GNUC__) || defined(__cplusplus__) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L))
+:#       define STATIC_INLINE static inline
+:#   else
+:#       define STATIC_INLINE static
+:#   endif
+:#endif /* STATIC_INLINE */
+:
+:#ifndef __attribute__format__
+:#define __attribute__format__(a,b,c) /* nothing */
+:#endif
+:
+:#ifndef LIKELY /* they are just a compiler's hint */
+:#define LIKELY(x)   (x)
+:#define UNLIKELY(x) (x)
+:#endif
+:
+:#ifndef newSVpvs_share
+:#define newSVpvs_share(s) Perl_newSVpvn_share(aTHX_ STR_WITH_LEN(s), 0U)
+:#endif
+:
+:#ifndef get_cvs
+:#define get_cvs(name, flags) get_cv(name, flags)
+:#endif
+:
+:#ifndef GvNAME_get
+:#define GvNAME_get GvNAME
+:#endif
+:#ifndef GvNAMELEN_get
+:#define GvNAMELEN_get GvNAMELEN
+:#endif
+:
+:#ifndef CvGV_set
+:#define CvGV_set(cv, gv) (CvGV(cv) = (gv))
+:#endif
+:
+:/* general utility */
+:
+:#if PERL_BCDVERSION >= 0x5008005
+:#define LooksLikeNumber(x) looks_like_number(x)
+:#else
+:#define LooksLikeNumber(x) (SvPOKp(x) ? looks_like_number(x) : (I32)SvNIOKp(x))
+:#endif
+:
+:#define newAV_mortal() (AV*)sv_2mortal((SV*)newAV())
+:#define newHV_mortal() (HV*)sv_2mortal((SV*)newHV())
+:
+:#define DECL_BOOT(name) EXTERN_C XS(CAT2(boot_, name))
+:#define CALL_BOOT(name) STMT_START {            \
+:        PUSHMARK(SP);                           \
+:        CALL_FPTR(CAT2(boot_, name))(aTHX_ cv); \
+:    } STMT_END
+XSHELPER_H
+    $h =~ s/^://xmsg;
+    return $h;
+}
 
 package
     MY;
@@ -625,7 +746,6 @@ sub const_cccmd {
 
     return $cccmd
 }
-
 1;
 __END__
 
@@ -637,7 +757,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.27.
+This document describes Module::Install::XSUtil version 0.30.
 
 =head1 SYNOPSIS
 
@@ -708,10 +828,18 @@ for what I<$module> provides.
 
 =head2 use_ppport ?$version
 
-Create F<ppport.h> using C<Devel::PPPort::WriteFile()>.
+Creates F<ppport.h> using C<Devel::PPPort::WriteFile()>.
 
 This command calls C<< configure_requires 'Devel::PPPort' => $version >>
 and adds C<-DUSE_PPPORT> to C<MakeMaker>'s C<DEFINE>.
+
+=head2 use_xshelper
+
+Create sF<xshelper.h>, which is a helper header file to include
+F<EXTERN.h>, F<perl.h>, F<XSUB.h> and F<ppport.h>, and defines
+some portability stuff which are not supported by F<ppport.h>.
+
+This command includes C<use_ppport>.
 
 =head2 cc_warnings
 
