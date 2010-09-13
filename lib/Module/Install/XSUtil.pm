@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -614,12 +614,12 @@ sub _xshelper_h {
 :/*
 :=head1 NAME
 :
-:perlxs.h - Helper C header file for XS modules
+:xshelper.h - Helper C header file for XS modules
 :
 :=head1 DESCRIPTION
 :
 :    // This includes all the perl header files and ppport.h
-:    #include "perlxs.h"
+:    #include "xshelper.h"
 :
 :=head1 SEE ALSO
 :
@@ -627,7 +627,7 @@ sub _xshelper_h {
 :
 :=head1 AUTHOR
 :
-:Fuji, Goro (gfx)
+:Fuji, Goro (gfx) E<lt>gfuji at cpan.orgE<gt>
 :
 :=head1 LISENCE
 :
@@ -659,11 +659,11 @@ sub _xshelper_h {
 :/* portability stuff not supported by ppport.h yet */
 :
 :#ifndef STATIC_INLINE /* from 5.13.4 */
-:#   if defined(__GNUC__) || defined(__cplusplus__) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L))
-:#       define STATIC_INLINE static inline
-:#   else
-:#       define STATIC_INLINE static
-:#   endif
+:# if defined(__GNUC__) || defined(__cplusplus) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L))
+:#   define STATIC_INLINE static inline
+:# else
+:#   define STATIC_INLINE static
+:# endif
 :#endif /* STATIC_INLINE */
 :
 :#ifndef __attribute__format__
@@ -757,7 +757,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.30.
+This document describes Module::Install::XSUtil version 0.31.
 
 =head1 SYNOPSIS
 
@@ -950,7 +950,7 @@ L<ExtUtils::MakeMaker>.
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (c) 2009-2010, Goro Fuji (gfx). Some rights reserved.
+Copyright (c) 2009-2010, Goro Fuji (gfx). All rights reserved.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
