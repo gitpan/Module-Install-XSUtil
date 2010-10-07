@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.35';
+$VERSION = '0.36';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -231,7 +231,7 @@ C99
 
     $tmpfile->close();
 
-    system $Config{cc}, '-c', $tmpfile->filename;
+    system "$Config{cc} -c " . $tmpfile->filename;
 
     (my $objname = File::Basename::basename($tmpfile->filename)) =~ s/\Q.c\E$/$Config{_o}/;
     unlink $objname or warn "Cannot unlink $objname (ignored): $!";
@@ -776,7 +776,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.35.
+This document describes Module::Install::XSUtil version 0.36.
 
 =head1 SYNOPSIS
 
@@ -806,7 +806,7 @@ This document describes Module::Install::XSUtil version 0.35.
     # This is a special version of requires().
     # If XS::SomeFeature provides header files,
     # this will add its include paths into INC
-    requies_xs 'XS::SomeFeature';
+    requires_xs 'XS::SomeFeature';
 
 
 =head1 DESCRIPTION
