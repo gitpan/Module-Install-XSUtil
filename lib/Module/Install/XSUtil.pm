@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.38';
+$VERSION = '0.39';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -254,6 +254,17 @@ sub requires_c99 {
     return;
 }
 
+sub requires_cplusplus {
+    my($self) = @_;
+    if(!$self->cc_available) {
+        warn "This distribution requires a C++ compiler, but $Config{cc} seems not to support C++, stopped.\n";
+        exit;
+    }
+    $self->_xs_initialize();
+    $UseCplusplus = 1;
+    return;
+}
+
 sub cc_append_to_inc{
     my($self, @dirs) = @_;
 
@@ -470,6 +481,8 @@ sub cc_src_paths{
 
     return;
 }
+
+sub cc_inc_paths { goto &cc_include_paths }
 
 sub cc_include_paths{
     my($self, @dirs) = @_;
@@ -783,7 +796,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.38.
+This document describes Module::Install::XSUtil version 0.39.
 
 =head1 SYNOPSIS
 
@@ -886,6 +899,10 @@ Sets source file directories which include F<*.xs> or F<*.c>.
 
 Sets include paths for a C compiler.
 
+=head2 cc_inc_paths @include_paths;
+
+Alias to C<cc_include_paths>.
+
 =head2 cc_libs @libs
 
 Sets C<MakeMaker>'s C<LIBS>. If a name starts C<->, it will be interpreted as is.
@@ -905,7 +922,13 @@ the path names explicitly.
 
 =head2 requires_c99
 
-Checks if the C compiler supports C99 features.
+Tells the build system to use C99 features.
+
+=head2 requires_cplusplus
+
+Tells the build system to use C++ language.
+
+This is experimental. Only warnings flags are changed by this command.
 
 =head2 install_headers ?@header_files
 
