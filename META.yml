@@ -31,4 +31,4 @@ requires:
 resources:
   license: http://dev.perl.org/licenses/
   repository: git://github.com/gfx/Perl-Module-Install-XSUtil.git
-version: 0.39
+version: 0.40

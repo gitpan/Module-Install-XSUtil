@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.39';
+$VERSION = '0.40';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -17,11 +17,10 @@ use File::Find;
 use constant _VERBOSE => $ENV{MI_VERBOSE} ? 1 : 0;
 
 my %ConfigureRequires = (
-    # currently nothing
+    'ExtUtils::ParseXS' => 2.21,
 );
 
 my %BuildRequires = (
-    'ExtUtils::ParseXS' => 2.21, # the newer, the better
 );
 
 my %Requires = (
@@ -796,7 +795,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.39.
+This document describes Module::Install::XSUtil version 0.40.
 
 =head1 SYNOPSIS
 
