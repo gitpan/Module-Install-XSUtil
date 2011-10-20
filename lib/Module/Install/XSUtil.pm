@@ -2,7 +2,7 @@ package Module::Install::XSUtil;
 
 use 5.005_03;
 
-$VERSION = '0.41';
+$VERSION = '0.42';
 
 use Module::Install::Base;
 @ISA     = qw(Module::Install::Base);
@@ -482,8 +482,6 @@ sub cc_src_paths{
     return;
 }
 
-sub cc_inc_paths { goto &cc_include_paths }
-
 sub cc_include_paths{
     my($self, @dirs) = @_;
 
@@ -811,7 +809,7 @@ Module::Install::XSUtil - Utility functions for XS modules
 
 =head1 VERSION
 
-This document describes Module::Install::XSUtil version 0.41.
+This document describes Module::Install::XSUtil version 0.42.
 
 =head1 SYNOPSIS
 
@@ -916,7 +914,11 @@ Sets include paths for a C compiler.
 
 =head2 cc_inc_paths @include_paths;
 
-Alias to C<cc_include_paths>.
+This B<was> an alias to C<cc_include_paths>, but from 0.42,
+this is C<Module::Install::Compiler::cc_inc_paths>, which
+replaces the EUMM's C<INC> parameter.
+
+Don't use this function. Use C<cc_include_paths> instead.
 
 =head2 cc_libs @libs
 
