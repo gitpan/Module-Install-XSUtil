@@ -22,7 +22,7 @@ MANIFEST.SKIP
 META.yml
 README
 t/00_load.t
-t/01_example.t
 xt/01_podspell.t
 xt/02_pod.t
 xt/03_pod-coverage.t
+xt/04_example.t
