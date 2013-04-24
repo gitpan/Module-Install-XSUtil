@@ -24,5 +24,4 @@ README
 t/00_load.t
 xt/01_podspell.t
 xt/02_pod.t
-xt/03_pod-coverage.t
 xt/04_example.t
